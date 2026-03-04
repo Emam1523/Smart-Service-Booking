@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SmartService</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="icon">SS</div>
+                <span>SmartService</span>
+            </div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item active"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="browse.html" class="nav-item"><i class="fas fa-search"></i><span>Browse Services</span></a>
+            <a href="bookings.html" class="nav-item"><i class="fas fa-calendar"></i><span>My Bookings</span></a>
+            <a href="profile.html" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">U</div>
+                <div class="user-details">
+                    <span class="name" id="userName">User</span>
+                    <span class="role">Customer</span>
+                </div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Auth.logout()" style="width:100%; margin-top: 12px;">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="topbar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2>Dashboard</h2>
+        </div>
+
+        <div class="content-area">
+            <!-- Welcome Banner -->
+            <div class="card" style="background: linear-gradient(135deg, var(--primary), var(--accent)); margin-bottom: 24px;">
+                <div style="padding: 32px;">
+                    <h2 style="color: white; margin-bottom: 8px;">Welcome back, <span id="welcomeName">User</span>! 👋</h2>
+                    <p style="color: rgba(255,255,255,0.85);">Find and book trusted local services with just a few clicks.</p>
+                    <a href="browse.html" class="btn btn-lg" style="background: white; color: var(--primary); margin-top: 16px;">
+                        <i class="fas fa-search"></i> Browse Services
+                    </a>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="grid-4" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(108,99,255,0.15); color: var(--primary);">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalBookings">0</h3>
+                        <p>Total Bookings</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(0,217,166,0.15); color: var(--accent);">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="completedBookings">0</h3>
+                        <p>Completed</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(255,184,0,0.15); color: var(--warning);">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="pendingBookings">0</h3>
+                        <p>Pending</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(255,101,132,0.15); color: var(--secondary);">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="reviewsGiven">0</h3>
+                        <p>Reviews Given</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Categories -->
+            <div class="card" style="margin-top: 24px;">
+                <div class="card-header">
+                    <h3><i class="fas fa-th-large"></i> Quick Browse</h3>
+                </div>
+                <div class="card-body">
+                    <div class="category-grid" style="grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));">
+                        <div class="category-card" onclick="location.href='browse.html?category=ELECTRICIAN'" style="padding: 16px;">
+                            <i class="fas fa-bolt" style="font-size: 24px;"></i>
+                            <h4 style="font-size: 13px;">Electrician</h4>
+                        </div>
+                        <div class="category-card" onclick="location.href='browse.html?category=PLUMBER'" style="padding: 16px;">
+                            <i class="fas fa-wrench" style="font-size: 24px;"></i>
+                            <h4 style="font-size: 13px;">Plumber</h4>
+                        </div>
+                        <div class="category-card" onclick="location.href='browse.html?category=TUTOR'" style="padding: 16px;">
+                            <i class="fas fa-graduation-cap" style="font-size: 24px;"></i>
+                            <h4 style="font-size: 13px;">Tutor</h4>
+                        </div>
+                        <div class="category-card" onclick="location.href='browse.html?category=CLEANER'" style="padding: 16px;">
+                            <i class="fas fa-broom" style="font-size: 24px;"></i>
+                            <h4 style="font-size: 13px;">Cleaner</h4>
+                        </div>
+                        <div class="category-card" onclick="location.href='browse.html?category=CARPENTER'" style="padding: 16px;">
+                            <i class="fas fa-hammer" style="font-size: 24px;"></i>
+                            <h4 style="font-size: 13px;">Carpenter</h4>
+                        </div>
+                        <div class="category-card" onclick="location.href='browse.html?category=PAINTER'" style="padding: 16px;">
+                            <i class="fas fa-paint-roller" style="font-size: 24px;"></i>
+                            <h4 style="font-size: 13px;">Painter</h4>
+                        </div>
+                        <div class="category-card" onclick="location.href='browse.html?category=AC_REPAIR'" style="padding: 16px;">
+                            <i class="fas fa-snowflake" style="font-size: 24px;"></i>
+                            <h4 style="font-size: 13px;">AC Repair</h4>
+                        </div>
+                        <div class="category-card" onclick="location.href='browse.html?category=HOME_SHIFTING'" style="padding: 16px;">
+                            <i class="fas fa-truck" style="font-size: 24px;"></i>
+                            <h4 style="font-size: 13px;">Home Shifting</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Bookings -->
+            <div class="card" style="margin-top: 24px;">
+                <div class="card-header">
+                    <h3><i class="fas fa-history"></i> Recent Bookings</h3>
+                    <a href="bookings.html" class="btn btn-sm btn-secondary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Provider</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentBookingsTable">
+                                <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        Auth.requireAuth('USER');
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.fullName || 'User';
+        document.getElementById('userAvatar').textContent = Auth.getInitials();
+        document.getElementById('welcomeName').textContent = (user.fullName || 'User').split(' ')[0];
+
+        async function loadDashboard() {
+            try {
+                const bookings = await ApiService.getMyBookings();
+                const list = bookings.data || [];
+
+                const total = list.length;
+                const completed = list.filter(b => b.status === 'COMPLETED').length;
+                const pending = list.filter(b => ['PENDING', 'CONFIRMED'].includes(b.status)).length;
+
+                document.getElementById('totalBookings').textContent = total;
+                document.getElementById('completedBookings').textContent = completed;
+                document.getElementById('pendingBookings').textContent = pending;
+
+                // Reviews count
+                const reviewCount = list.filter(b => b.status === 'COMPLETED').length;
+                document.getElementById('reviewsGiven').textContent = reviewCount;
+
+                // Recent bookings table
+                const tbody = document.getElementById('recentBookingsTable');
+                if (list.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No bookings yet. <a href="browse.html">Browse services</a></td></tr>';
+                    return;
+                }
+
+                const recent = list.slice(0, 5);
+                tbody.innerHTML = recent.map(b => `
+                    <tr>
+                        <td><strong>${(b.service && b.service.title) || 'Service'}</strong></td>
+                        <td>${(b.provider && b.provider.businessName) || '-'}</td>
+                        <td>${formatDate(b.bookingDate || b.createdAt)}</td>
+                        <td>${getStatusBadge(b.status)}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Dashboard load error:', error);
+                document.getElementById('recentBookingsTable').innerHTML =
+                    '<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Failed to load data</td></tr>';
+            }
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>
+

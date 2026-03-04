@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviews - SmartService</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><div class="icon">SS</div><span>SmartService</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="services.html" class="nav-item"><i class="fas fa-concierge-bell"></i><span>My Services</span></a>
+            <a href="bookings.html" class="nav-item"><i class="fas fa-calendar"></i><span>Bookings</span></a>
+            <a href="reviews.html" class="nav-item active"><i class="fas fa-star"></i><span>Reviews</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">P</div>
+                <div class="user-details"><span class="name" id="userName">Provider</span><span class="role">Service Provider</span></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Auth.logout()" style="width:100%; margin-top: 12px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            <h2>My Reviews</h2>
+        </div>
+
+        <div class="content-area">
+            <!-- Rating Summary -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-body" style="display: flex; align-items: center; gap: 32px; flex-wrap: wrap;">
+                    <div style="text-align: center; min-width: 120px;">
+                        <h1 style="font-size: 48px; color: var(--warning);" id="overallRating">0.0</h1>
+                        <div id="overallStars" style="color: var(--warning); font-size: 18px;"></div>
+                        <p style="color: var(--text-muted); margin-top: 4px;"><span id="totalReviews">0</span> reviews</p>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;" id="ratingBars">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reviews List -->
+            <div id="reviewsList">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        Auth.requireAuth('PROVIDER');
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.fullName || 'Provider';
+        document.getElementById('userAvatar').textContent = Auth.getInitials();
+
+        async function loadReviews() {
+            try {
+                const response = await ApiService.getProviderReviews();
+                const reviews = response.data || [];
+
+                // Calculate stats
+                const total = reviews.length;
+                const avg = total > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / total) : 0;
+
+                document.getElementById('overallRating').textContent = avg.toFixed(1);
+                document.getElementById('totalReviews').textContent = total;
+                document.getElementById('overallStars').innerHTML = getStarRating(avg);
+
+                // Rating distribution
+                const dist = [0, 0, 0, 0, 0];
+                reviews.forEach(r => { if (r.rating >= 1 && r.rating <= 5) dist[r.rating - 1]++; });
+
+                document.getElementById('ratingBars').innerHTML = [5,4,3,2,1].map(star => {
+                    const count = dist[star - 1];
+                    const pct = total > 0 ? (count / total * 100) : 0;
+                    return `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <span style="width: 20px; text-align: right; color: var(--text-muted); font-size: 13px;">${star}★</span>
+                        <div style="flex: 1; height: 8px; background: var(--bg-darker); border-radius: 4px; overflow: hidden;">
+                            <div style="height: 100%; width: ${pct}%; background: var(--warning); border-radius: 4px;"></div>
+                        </div>
+                        <span style="width: 30px; color: var(--text-muted); font-size: 13px;">${count}</span>
+                    </div>`;
+                }).join('');
+
+                // Reviews list
+                const container = document.getElementById('reviewsList');
+                if (reviews.length === 0) {
+                    container.innerHTML = `<div class="card"><div class="card-body text-center" style="padding: 48px; color:var(--text-muted);">
+                        <i class="fas fa-star" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                        <h3>No reviews yet</h3><p>Reviews will appear here once customers rate your services</p>
+                    </div></div>`;
+                    return;
+                }
+
+                container.innerHTML = reviews.map(r => `
+                    <div class="card" style="margin-bottom: 12px;">
+                        <div class="card-body">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                        <div class="avatar" style="width: 40px; height: 40px; font-size: 14px;">${((r.user && r.user.fullName) || (r.reviewerName) || 'U').charAt(0)}</div>
+                                        <div>
+                                            <strong>${(r.user && r.user.fullName) || r.reviewerName || 'Customer'}</strong>
+                                            <div style="color: var(--warning);">${getStarRating(r.rating)}</div>
+                                        </div>
+                                    </div>
+                                    <p style="margin-top: 8px;">${r.comment || ''}</p>
+                                    <p style="color: var(--text-muted); font-size: 12px; margin-top: 8px;">
+                                        <i class="fas fa-concierge-bell"></i> ${(r.service && r.service.title) || ''} &middot; ${formatDate(r.createdAt)}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('reviewsList').innerHTML =
+                    '<div class="card"><div class="card-body text-center" style="color:var(--text-muted);">Failed to load reviews</div></div>';
+            }
+        }
+
+        loadReviews();
+    </script>
+</body>
+</html>

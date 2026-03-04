@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Providers - SmartService Admin</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><div class="icon">SS</div><span>SmartService</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            <a href="users.html" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+            <a href="providers.html" class="nav-item active"><i class="fas fa-user-tie"></i><span>Providers</span></a>
+            <a href="bookings.html" class="nav-item"><i class="fas fa-calendar"></i><span>Bookings</span></a>
+            <a href="reviews.html" class="nav-item"><i class="fas fa-star"></i><span>Reviews</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">A</div>
+                <div class="user-details"><span class="name" id="userName">Admin</span><span class="role">Administrator</span></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Auth.logout()" style="width:100%; margin-top: 12px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <button type="button" class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            <h2>Manage Providers</h2>
+        </div>
+
+        <div class="content-area">
+            <!-- Filters -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-body" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                    <div class="tab-nav">
+                        <button class="tab-btn active" onclick="filterProviders('ALL', this)">All</button>
+                        <button class="tab-btn" onclick="filterProviders('PENDING', this)">Pending</button>
+                        <button class="tab-btn" onclick="filterProviders('APPROVED', this)">Approved</button>
+                        <button class="tab-btn" onclick="filterProviders('REJECTED', this)">Rejected</button>
+                        <button class="tab-btn" onclick="filterProviders('BANNED', this)">Banned</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Providers Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Provider</th>
+                                    <th>Category</th>
+                                    <th>Rating</th>
+                                    <th>Services</th>
+                                    <th>Jobs</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="providersTable">
+                                <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        Auth.requireAuth('ADMIN');
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.fullName || 'Admin';
+        document.getElementById('userAvatar').textContent = Auth.getInitials();
+
+        let allProviders = [];
+        let currentFilter = 'ALL';
+
+        async function loadProviders() {
+            try {
+                const response = await ApiService.getAdminProviders();
+                allProviders = response.data || [];
+                renderProviders();
+            } catch (e) {
+                document.getElementById('providersTable').innerHTML =
+                    '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Failed to load providers</td></tr>';
+            }
+        }
+
+        function filterProviders(status, btn) {
+            currentFilter = status;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderProviders();
+        }
+
+        function renderProviders() {
+            const filtered = currentFilter === 'ALL' ? allProviders : allProviders.filter(p => p.status === currentFilter);
+            const tbody = document.getElementById('providersTable');
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No providers found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(p => `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div class="avatar" style="width:36px;height:36px;font-size:13px;">${(p.businessName || p.userName || 'P').charAt(0)}</div>
+                            <div>
+                                <strong>${p.businessName || '-'}</strong>
+                                <p style="color:var(--text-muted); font-size: 12px; margin: 0;">${(p.user && p.user.email) || p.email || ''}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="badge badge-info">${p.primaryCategory || p.category || '-'}</span></td>
+                    <td><span style="color: var(--warning);"><i class="fas fa-star"></i> ${(p.averageRating || 0).toFixed(1)}</span></td>
+                    <td>${p.totalServices || 0}</td>
+                    <td><strong>${p.completedJobs || 0}</strong></td>
+                    <td>
+                        <span class="badge badge-${
+                            p.status === 'APPROVED' ? 'success' : 
+                            p.status === 'PENDING' ? 'warning' : 
+                            p.status === 'BANNED' ? 'danger' : 'danger'
+                        }">${p.status}</span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                            ${p.status === 'PENDING' ? `
+                                <button class="btn btn-sm btn-accent" onclick="approveProvider(${p.id})" title="Approve"><i class="fas fa-check"></i></button>
+                                <button class="btn btn-sm btn-danger" onclick="rejectProvider(${p.id})" title="Reject"><i class="fas fa-times"></i></button>
+                            ` : ''}
+                            ${p.status === 'APPROVED' ? `
+                                <button class="btn btn-sm btn-warning" onclick="banProvider(${p.id})" title="Ban"><i class="fas fa-ban"></i></button>
+                            ` : ''}
+                            ${p.status === 'BANNED' ? `
+                                <button class="btn btn-sm btn-accent" onclick="approveProvider(${p.id})" title="Unban"><i class="fas fa-unlock"></i></button>
+                            ` : ''}
+                            ${p.status === 'REJECTED' ? `
+                                <button class="btn btn-sm btn-accent" onclick="approveProvider(${p.id})" title="Approve"><i class="fas fa-check"></i></button>
+                            ` : ''}
+                            <button class="btn btn-sm btn-danger" onclick="deleteProvider(${p.id})" title="Delete Permanently"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function approveProvider(id) {
+            try { await ApiService.approveProvider(id); showToast('Provider approved!', 'success'); loadProviders(); }
+            catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+        async function rejectProvider(id) {
+            if (!confirm('Reject this provider?')) return;
+            try { await ApiService.rejectProvider(id); showToast('Provider rejected', 'success'); loadProviders(); }
+            catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+        async function banProvider(id) {
+            if (!confirm('Ban this provider?')) return;
+            try { await ApiService.banProvider(id); showToast('Provider banned', 'success'); loadProviders(); }
+            catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+        async function deleteProvider(id) {
+            if (!confirm('Permanently delete this provider and all their services, bookings, and reviews? This cannot be undone.')) return;
+            try { await ApiService.deleteAdminProvider(id); showToast('Provider deleted', 'success'); loadProviders(); }
+            catch (e) { showToast(e.message || 'Failed to delete provider', 'error'); }
+        }
+
+        loadProviders();
+    </script>
+</body>
+</html>

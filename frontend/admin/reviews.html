@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Reviews - SmartService Admin</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><div class="icon">SS</div><span>SmartService</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            <a href="users.html" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+            <a href="providers.html" class="nav-item"><i class="fas fa-user-tie"></i><span>Providers</span></a>
+            <a href="bookings.html" class="nav-item"><i class="fas fa-calendar"></i><span>Bookings</span></a>
+            <a href="reviews.html" class="nav-item active"><i class="fas fa-star"></i><span>Reviews</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">A</div>
+                <div class="user-details"><span class="name" id="userName">Admin</span><span class="role">Administrator</span></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Auth.logout()" style="width:100%; margin-top: 12px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <button type="button" class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            <h2>Manage Reviews</h2>
+        </div>
+
+        <div class="content-area">
+            <!-- Search -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-body" style="display: flex; gap: 12px; align-items: center;">
+                    <div class="input-icon" style="flex: 1;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search by customer, provider or service..." oninput="renderReviews()">
+                    </div>
+                    <select id="ratingFilter" class="form-control rating-filter" title="Filter reviews by rating" onchange="renderReviews()">
+                        <option value="">All Ratings</option>
+                        <option value="5">★★★★★ (5)</option>
+                        <option value="4">★★★★☆ (4)</option>
+                        <option value="3">★★★☆☆ (3)</option>
+                        <option value="2">★★☆☆☆ (2)</option>
+                        <option value="1">★☆☆☆☆ (1)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Reviews Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Customer</th>
+                                    <th>Provider</th>
+                                    <th>Service</th>
+                                    <th>Rating</th>
+                                    <th>Comment</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reviewsTable">
+                                <tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        Auth.requireAuth('ADMIN');
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.fullName || 'Admin';
+        document.getElementById('userAvatar').textContent = Auth.getInitials();
+
+        let allReviews = [];
+
+        async function loadReviews() {
+            const tbody = document.getElementById('reviewsTable');
+            try {
+                const response = await ApiService.getAdminReviews();
+                allReviews = response.data || [];
+                renderReviews();
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Failed to load reviews</td></tr>';
+            }
+        }
+
+        function renderReviews() {
+            const tbody = document.getElementById('reviewsTable');
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const ratingFilter = document.getElementById('ratingFilter').value;
+
+            let filtered = allReviews;
+            if (search) {
+                filtered = filtered.filter(r =>
+                    ((r.user && r.user.fullName) || '').toLowerCase().includes(search) ||
+                    ((r.provider && r.provider.businessName) || '').toLowerCase().includes(search) ||
+                    ((r.service && r.service.title) || '').toLowerCase().includes(search) ||
+                    (r.comment || '').toLowerCase().includes(search)
+                );
+            }
+            if (ratingFilter) {
+                filtered = filtered.filter(r => r.rating == ratingFilter);
+            }
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">No reviews found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(r => {
+                const stars = '★'.repeat(r.rating || 0) + '☆'.repeat(5 - (r.rating || 0));
+                const ratingColor = r.rating >= 4 ? 'var(--accent)' : r.rating >= 3 ? 'var(--warning)' : 'var(--danger)';
+                return `
+                <tr>
+                    <td>#${r.id}</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div class="avatar" style="width:30px;height:30px;font-size:11px;">${((r.user && r.user.fullName) || 'U').charAt(0)}</div>
+                            <span>${(r.user && r.user.fullName) || '-'}</span>
+                        </div>
+                    </td>
+                    <td><strong>${(r.provider && r.provider.businessName) || '-'}</strong></td>
+                    <td>${(r.service && r.service.title) || '-'}</td>
+                    <td>
+                        <span style="color: ${ratingColor}; font-size: 15px; letter-spacing: 1px;">${stars}</span>
+                        <span style="color:var(--text-muted); font-size:12px; margin-left:4px;">(${r.rating}/5)</span>
+                    </td>
+                    <td style="max-width: 200px; white-space: normal; word-break: break-word;">
+                        ${r.comment ? `<span style="font-size:13px;">${r.comment}</span>` : '<span style="color:var(--text-muted);">—</span>'}
+                    </td>
+                    <td style="white-space:nowrap;">${formatDate(r.createdAt)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="deleteReview(${r.id})" title="Delete Review">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            }).join('');
+        }
+
+        async function deleteReview(id) {
+            if (!confirm('Permanently delete this review? This cannot be undone.')) return;
+            try {
+                await ApiService.deleteAdminReview(id);
+                showToast('Review deleted', 'success');
+                loadReviews();
+            } catch (e) {
+                showToast(e.message || 'Failed to delete review', 'error');
+            }
+        }
+
+        loadReviews();
+    </script>
+</body>
+</html>

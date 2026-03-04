@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Services - SmartService</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Service card provider actions */
+        .provider-service-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            overflow: hidden;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+        }
+        .provider-service-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow);
+            border-color: var(--primary);
+        }
+        .provider-service-card .card-banner {
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            position: relative;
+        }
+        .card-banner .availability-tag {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+        }
+        .availability-tag.active { background: rgba(0,217,166,0.2); color: var(--accent); }
+        .availability-tag.inactive { background: rgba(255,71,87,0.15); color: var(--danger); }
+
+        .provider-service-card .card-info {
+            padding: 18px 18px 0;
+            flex: 1;
+        }
+        .card-info .cat-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--primary-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .card-info h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+        .card-info .service-desc {
+            font-size: 0.83rem;
+            color: var(--text-muted);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .card-info .meta-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .card-info .meta-row span { display: flex; align-items: center; gap: 4px; }
+        .card-info .price-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 0 0;
+            border-top: 1px solid var(--border-color);
+        }
+        .card-info .price { font-size: 1.15rem; font-weight: 800; color: var(--accent); }
+        .card-info .rating { display: flex; align-items: center; gap: 4px; color: var(--warning); font-size: 0.83rem; }
+
+        .provider-service-card .card-actions {
+            display: flex;
+            gap: 6px;
+            padding: 12px 18px 18px;
+        }
+        .card-actions .btn-toggle {
+            flex: 1;
+            padding: 7px 0;
+            font-size: 0.82rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .card-actions .btn-toggle:hover { background: var(--bg-hover); }
+        .card-actions .btn-toggle.on { border-color: var(--danger); color: var(--danger); }
+        .card-actions .btn-toggle.off { border-color: var(--accent); color: var(--accent); }
+
+        /* Add Service header card */
+        .add-service-banner {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            color: #fff;
+        }
+        .add-service-banner .left h2 { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+        .add-service-banner .left p { font-size: 0.88rem; opacity: 0.85; }
+        .add-service-banner .btn-add {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.5);
+            color: #fff;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+        .add-service-banner .btn-add:hover {
+            background: rgba(255,255,255,0.35);
+            border-color: #fff;
+        }
+
+        /* Modal wider for service form */
+        #serviceModal .modal { max-width: 560px; }
+
+        /* Category preview in form */
+        .category-preview {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 16px;
+        }
+        .category-preview .preview-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .category-preview .preview-text { font-size: 0.83rem; color: var(--text-muted); }
+        .category-preview .preview-text strong { display: block; font-size: 0.9rem; color: var(--text-primary); }
+
+        .form-section-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin: 20px 0 12px;
+        }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><div class="icon">SS</div><span>SmartService</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="services.html" class="nav-item active"><i class="fas fa-concierge-bell"></i><span>My Services</span></a>
+            <a href="bookings.html" class="nav-item"><i class="fas fa-calendar"></i><span>Bookings</span></a>
+            <a href="reviews.html" class="nav-item"><i class="fas fa-star"></i><span>Reviews</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">P</div>
+                <div class="user-details"><span class="name" id="userName">Provider</span><span class="role">Service Provider</span></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Auth.logout()" style="width:100%; margin-top: 12px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+            <h2>My Services</h2>
+            <div class="topbar-right">
+                <button class="btn btn-primary btn-sm" onclick="openServiceModal()"><i class="fas fa-plus"></i> Add Service</button>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <!-- Add Service Banner -->
+            <div class="add-service-banner">
+                <div class="left">
+                    <h2><i class="fas fa-concierge-bell" style="margin-right:8px;"></i>Add a New Service</h2>
+                    <p>Create a service card with your details — customers will find and book you instantly.</p>
+                </div>
+                <button class="btn-add" onclick="openServiceModal()">
+                    <i class="fas fa-plus-circle"></i> Add Service
+                </button>
+            </div>
+
+            <!-- Service Count -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                <p id="serviceCount" style="color:var(--text-muted); font-size:0.88rem;"></p>
+            </div>
+
+            <!-- Services Grid -->
+            <div class="grid-3" id="servicesList">
+                <div style="grid-column:1/-1; text-align:center; padding:40px; color:var(--text-muted);">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add / Edit Service Modal-->
+    <div class="modal-overlay" id="serviceModal" onclick="handleOverlayClick(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="serviceModalTitle">Add New Service</h3>
+                <button class="modal-close" onclick="closeServiceModal()" title="Close modal">
+                    <i class="fas fa-times" style="font-size:0.85rem;"></i>
+                </button>
+            </div>
+
+            <!-- Category Preview Strip -->
+            <div class="category-preview" id="categoryPreview">
+                <div class="preview-icon" id="previewIcon" style="background: linear-gradient(135deg,#6C63FF,#FF6584);">
+                    <i class="fas fa-tools" id="previewIconI"></i>
+                </div>
+                <div class="preview-text">
+                    <strong id="previewCategory">Select a category</strong>
+                    <span id="previewName">Your service card will look beautiful</span>
+                </div>
+            </div>
+
+            <form id="serviceForm" onsubmit="return false;">
+                <!-- Basic Info -->
+                <div class="form-section-label">Basic Information</div>
+
+                <div class="form-group">
+                    <label>Service Title <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="serviceName" class="form-control"
+                           placeholder="e.g. Full House Wiring, AC Installation"
+                           oninput="updatePreviewName()" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Category <span style="color:var(--danger)">*</span></label>
+                    <select id="serviceCategory" class="form-control" onchange="updatePreview()" title="Select service category" required>
+                        <option value="">— Select Category —</option>
+                        <option value="ELECTRICIAN">⚡ Electrician</option>
+                        <option value="PLUMBER">🔧 Plumber</option>
+                        <option value="TUTOR">🎓 Tutor</option>
+                        <option value="CLEANER">🧹 Cleaner</option>
+                        <option value="CARPENTER">🔨 Carpenter</option>
+                        <option value="PAINTER">🎨 Painter</option>
+                        <option value="AC_REPAIR">❄️ AC Repair</option>
+                        <option value="HOME_SHIFTING">🚚 Home Shifting</option>
+                        <option value="OTHER">🔧 Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Description <span style="color:var(--danger)">*</span></label>
+                    <textarea id="serviceDesc" class="form-control" rows="3"
+                              placeholder="Describe what you offer, your experience, and what's included…" required></textarea>
+                </div>
+
+                <!-- Pricing & Duration -->
+                <div class="form-section-label">Pricing & Duration</div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Price (৳) <span style="color:var(--danger)">*</span></label>
+                        <input type="number" id="servicePrice" class="form-control"
+                               placeholder="500" min="0" step="10" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Duration</label>
+                        <input type="text" id="serviceDuration" class="form-control"
+                               placeholder="e.g. 2–3 hours, 1 day">
+                    </div>
+                </div>
+
+                <!-- Location -->
+                <div class="form-section-label">Availability</div>
+
+                <div class="form-group">
+                    <label>Service Area / Location</label>
+                    <input type="text" id="serviceArea" class="form-control"
+                           placeholder="e.g. Dhaka, Mirpur, Uttara — areas you cover">
+                </div>
+            </form>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeServiceModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="saveServiceBtn" onclick="saveService()">
+                    <i class="fas fa-save"></i> <span id="saveBtnText">Create Service</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        Auth.requireAuth('PROVIDER');
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.fullName || 'Provider';
+        document.getElementById('userAvatar').textContent = Auth.getInitials();
+
+        let editingServiceId = null;
+
+        // Load & Render Services
+        async function loadServices() {
+            const container = document.getElementById('servicesList');
+            container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);"><div class="spinner"></div></div>`;
+            try {
+                const response = await ApiService.getProviderServices();
+                const services = response.data || response || [];
+                renderServices(services);
+            } catch (e) {
+                container.innerHTML = `
+                    <div class="card" style="grid-column:1/-1;">
+                        <div class="card-body" style="text-align:center;padding:48px;color:var(--text-muted);">
+                            <i class="fas fa-exclamation-circle" style="font-size:40px;margin-bottom:12px;color:var(--danger);opacity:0.7;"></i>
+                            <h3>Could not load services</h3>
+                            <p style="margin-bottom:16px;">${e.message || 'Check your connection and try again.'}</p>
+                            <button class="btn btn-secondary btn-sm" onclick="loadServices()"><i class="fas fa-redo"></i> Retry</button>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function renderServices(services) {
+            const container = document.getElementById('servicesList');
+            const countEl  = document.getElementById('serviceCount');
+
+            if (!services.length) {
+                countEl.textContent = '';
+                container.innerHTML = `
+                    <div class="card" style="grid-column:1/-1;">
+                        <div class="card-body" style="text-align:center;padding:60px;color:var(--text-muted);">
+                            <i class="fas fa-concierge-bell" style="font-size:52px;margin-bottom:16px;opacity:0.35;"></i>
+                            <h3 style="margin-bottom:8px;">No services yet</h3>
+                            <p style="margin-bottom:20px;">Create your first service so customers can find and book you.</p>
+                            <button class="btn btn-primary" onclick="openServiceModal()">
+                                <i class="fas fa-plus"></i> Add Your First Service
+                            </button>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            const active = services.filter(s => s.available).length;
+            countEl.textContent = `${services.length} service${services.length > 1 ? 's' : ''} · ${active} active`;
+
+            container.innerHTML = services.map(s => {
+                const cat       = s.category || 'OTHER';
+                const gradient  = getCategoryGradient(cat);
+                const icon      = getCategoryIcon(cat);
+                const catLabel  = cat.replace(/_/g, ' ');
+                return `
+                <div class="provider-service-card">
+                    <div class="card-banner" style="background:${gradient};">
+                        <i class="${icon}" style="color:rgba(255,255,255,0.92);"></i>
+                        <span class="availability-tag ${s.available ? 'active' : 'inactive'}">
+                            ${s.available ? '● Active' : '● Inactive'}
+                        </span>
+                    </div>
+                    <div class="card-info">
+                        <div class="cat-label">${catLabel}</div>
+                        <h3>${escHtml(s.title)}</h3>
+                        <p class="service-desc">${escHtml(s.description || 'No description provided.')}</p>
+                        <div class="meta-row">
+                            ${s.duration ? `<span><i class="fas fa-clock"></i> ${escHtml(s.duration)}</span>` : ''}
+                            ${s.serviceArea ? `<span><i class="fas fa-map-marker-alt"></i> ${escHtml(s.serviceArea)}</span>` : ''}
+                            <span><i class="fas fa-book-open"></i> ${s.totalBookings || 0} bookings</span>
+                        </div>
+                        <div class="price-row">
+                            <div class="price">${formatCurrency(s.price)}</div>
+                            <div class="rating">
+                                <i class="fas fa-star"></i>
+                                ${(s.averageRating || 0).toFixed(1)}
+                                <span style="color:var(--text-muted);font-size:0.75rem;">(${s.totalBookings || 0})</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-actions">
+                        <button type="button" class="btn-toggle ${s.available ? 'on' : 'off'}" onclick="toggleAvailability(${s.id}, ${s.available})" title="${s.available ? 'Deactivate' : 'Activate'} service">
+                            <i class="fas fa-${s.available ? 'eye-slash' : 'eye'}"></i>
+                            ${s.available ? 'Deactivate' : 'Activate'}
+                        </button>
+                        <button class="btn btn-sm btn-secondary" style="flex:1.2;" onclick='editService(${escAttr(s)})'>
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteService(${s.id})" title="Delete">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function escHtml(str) {
+            return String(str || '')
+                .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+        }
+        function escAttr(obj) {
+            return "'" + JSON.stringify(obj).replace(/'/g, '&#39;') + "'";
+        }
+
+        // Modal Control 
+        function openServiceModal(prefill = null) {
+            editingServiceId = null;
+            document.getElementById('serviceModalTitle').textContent = 'Add New Service';
+            document.getElementById('saveBtnText').textContent = 'Create Service';
+            document.getElementById('serviceForm').reset();
+            updatePreview();
+
+            if (prefill) {
+                editingServiceId = prefill.id;
+                document.getElementById('serviceModalTitle').textContent = 'Edit Service';
+                document.getElementById('saveBtnText').textContent = 'Save Changes';
+                document.getElementById('serviceName').value     = prefill.title || '';
+                document.getElementById('serviceCategory').value = prefill.category || '';
+                document.getElementById('serviceDesc').value     = prefill.description || '';
+                document.getElementById('servicePrice').value    = prefill.price || '';
+                document.getElementById('serviceDuration').value = prefill.duration || '';
+                document.getElementById('serviceArea').value     = prefill.serviceArea || '';
+                updatePreview();
+            }
+
+            document.getElementById('serviceModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function editService(serviceJson) {
+            const s = (typeof serviceJson === 'string') ? JSON.parse(serviceJson) : serviceJson;
+            openServiceModal(s);
+        }
+
+        function closeServiceModal() {
+            document.getElementById('serviceModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function handleOverlayClick(e) {
+            if (e.target === document.getElementById('serviceModal')) closeServiceModal();
+        }
+
+        // Category Preview 
+        const categoryLabels = {
+            ELECTRICIAN:'Electrician', PLUMBER:'Plumber', TUTOR:'Tutor',
+            CLEANER:'Cleaner', CARPENTER:'Carpenter', PAINTER:'Painter',
+            AC_REPAIR:'AC Repair', HOME_SHIFTING:'Home Shifting', OTHER:'Other'
+        };
+
+        function updatePreview() {
+            const cat  = document.getElementById('serviceCategory').value;
+            const icon = document.getElementById('previewIconI');
+            const iconWrap = document.getElementById('previewIcon');
+            const catEl    = document.getElementById('previewCategory');
+
+            if (cat) {
+                icon.className     = getCategoryIcon(cat);
+                iconWrap.style.background = getCategoryGradient(cat);
+                catEl.textContent  = categoryLabels[cat] || cat;
+            } else {
+                icon.className     = 'fas fa-tools';
+                iconWrap.style.background = 'linear-gradient(135deg,#6C63FF,#FF6584)';
+                catEl.textContent  = 'Select a category';
+            }
+            updatePreviewName();
+        }
+
+        function updatePreviewName() {
+            const name = document.getElementById('serviceName').value.trim();
+            document.getElementById('previewName').textContent =
+                name || 'Your service title will appear here';
+        }
+
+        // Save Service 
+        async function saveService() {
+            const title    = document.getElementById('serviceName').value.trim();
+            const category = document.getElementById('serviceCategory').value;
+            const desc     = document.getElementById('serviceDesc').value.trim();
+            const price    = document.getElementById('servicePrice').value;
+
+            if (!title)    { showToast('Service title is required', 'error'); document.getElementById('serviceName').focus(); return; }
+            if (!category) { showToast('Please select a category', 'error'); document.getElementById('serviceCategory').focus(); return; }
+            if (!desc)     { showToast('Description is required', 'error'); document.getElementById('serviceDesc').focus(); return; }
+            if (!price || parseFloat(price) <= 0) { showToast('Enter a valid price', 'error'); document.getElementById('servicePrice').focus(); return; }
+
+            const btn = document.getElementById('saveServiceBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving…';
+
+            const payload = {
+                title,
+                category,
+                description: desc,
+                price: parseFloat(price),
+                duration: document.getElementById('serviceDuration').value.trim() || null,
+                serviceArea: document.getElementById('serviceArea').value.trim() || null
+            };
+
+            try {
+                if (editingServiceId) {
+                    await ApiService.updateProviderService(editingServiceId, payload);
+                    showToast('Service updated successfully!', 'success');
+                } else {
+                    await ApiService.createProviderService(payload);
+                    showToast('New service created!', 'success');
+                }
+                closeServiceModal();
+                loadServices();
+            } catch (e) {
+                showToast(e.message || 'Failed to save service', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-save"></i> <span id="saveBtnText">${editingServiceId ? 'Save Changes' : 'Create Service'}</span>`;
+            }
+        }
+
+        //  Toggle Availability 
+        async function toggleAvailability(id, currentlyActive) {
+            try {
+                await ApiService.toggleServiceAvailability(id);
+                showToast(currentlyActive ? 'Service deactivated' : 'Service activated!', 'success');
+                loadServices();
+            } catch (e) {
+                showToast(e.message || 'Failed to update availability', 'error');
+            }
+        }
+
+        //  Delete Service 
+        async function deleteService(id) {
+            if (!confirm('Delete this service? This cannot be undone.')) return;
+            try {
+                await ApiService.deleteProviderService(id);
+                showToast('Service deleted', 'success');
+                loadServices();
+            } catch (e) {
+                showToast(e.message || 'Failed to delete service', 'error');
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeServiceModal(); });
+
+        loadServices();
+    </script>
+</body>
+</html>

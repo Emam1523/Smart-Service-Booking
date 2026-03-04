@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Services - SmartService</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        .filter-container {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .search-input-wrapper { flex: 1; min-width: 200px; }
+        .category-filter { width: auto; min-width: 160px; }
+        .sort-filter { width: auto; min-width: 140px; }
+
+        /* Service cards — Book Now button */
+        .service-card .btn-book {
+            width: 100%;
+            margin-top: 14px;
+            padding: 10px;
+            background: var(--primary);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .service-card .btn-book:hover { background: var(--primary-dark, #5a52d5); transform: translateY(-1px); }
+
+        /* Booking modal */
+        #bookingModal .modal {
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .service-summary-card {
+            background: var(--bg-darker, var(--bg-input));
+            border-radius: 12px;
+            padding: 16px 18px;
+            border-left: 4px solid var(--primary);
+            margin-bottom: 20px;
+        }
+        .service-summary-card h4 { margin-bottom: 4px; font-size: 1.05rem; }
+        .service-summary-card .provider-line {
+            color: var(--primary-light, var(--primary));
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+        }
+        .service-summary-card .price-rating {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .service-summary-card .s-price { font-size: 1.3rem; font-weight: 800; color: var(--accent); }
+        .service-summary-card .s-rating { color: var(--warning); font-size: 0.9rem; }
+
+        .form-section-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin: 18px 0 10px;
+        }
+        .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 500px) { .form-row-2 { grid-template-columns: 1fr; } }
+
+        .field-hint {
+            font-size: 0.76rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding-top: 18px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 20px;
+        }
+
+        /* Reviews inside modal */
+        .review-item {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .review-item:last-child { border-bottom: none; }
+        .review-item .review-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        .review-item .review-stars { color: var(--warning); font-size: 0.8rem; letter-spacing: 1px; }
+        .review-item .review-date { margin-left: auto; font-size: 0.72rem; color: var(--text-muted); }
+        .review-item p { margin: 0; font-size: 0.84rem; color: var(--text-muted); padding-left: 36px; }
+
+        /* Time slot grid */
+        .time-slots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .time-slot {
+            padding: 8px 4px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--bg-input);
+            color: var(--text-secondary);
+        }
+        .time-slot:hover { border-color: var(--primary); color: var(--primary); }
+        .time-slot.selected { background: var(--primary); color: #fff; border-color: var(--primary); font-weight: 700; }
+        @media (max-width: 480px) { .time-slots { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><div class="icon">SS</div><span>SmartService</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="browse.html" class="nav-item active"><i class="fas fa-search"></i><span>Browse Services</span></a>
+            <a href="bookings.html" class="nav-item"><i class="fas fa-calendar"></i><span>My Bookings</span></a>
+            <a href="profile.html" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">U</div>
+                <div class="user-details"><span class="name" id="userName">User</span><span class="role">Customer</span></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Auth.logout()" style="width:100%; margin-top: 12px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+            <h2>Browse Services</h2>
+        </div>
+
+        <div class="content-area">
+            <!-- Search & Filters -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-body">
+                    <div class="filter-container">
+                        <div class="input-icon search-input-wrapper">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" class="form-control"
+                                   placeholder="Search services..."
+                                   title="Search services"
+                                   aria-label="Search services"
+                                   oninput="debounceSearch()">
+                        </div>
+                        <select id="categoryFilter" class="form-control category-filter" title="Filter services by category" onchange="loadServices()">
+                            <option value="">All Categories</option>
+                            <option value="ELECTRICIAN">Electrician</option>
+                            <option value="PLUMBER">Plumber</option>
+                            <option value="TUTOR">Tutor</option>
+                            <option value="CLEANER">Cleaner</option>
+                            <option value="CARPENTER">Carpenter</option>
+                            <option value="PAINTER">Painter</option>
+                            <option value="AC_REPAIR">AC Repair</option>
+                            <option value="HOME_SHIFTING">Home Shifting</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                        <select id="sortFilter" class="form-control sort-filter" title="Sort services" onchange="sortServices()">
+                            <option value="default">Sort By</option>
+                            <option value="price-low">Price: Low to High</option>
+                            <option value="price-high">Price: High to Low</option>
+                            <option value="rating">Highest Rating</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="grid-3" id="servicesList">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </main>
+
+    <!--Booking Modal-->
+    <div class="modal-overlay" id="bookingModal" onclick="handleOverlayClick(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-calendar-plus" style="color:var(--primary);margin-right:8px;"></i> Book Appointment</h3>
+                <button class="modal-close" onclick="closeBookingModal()" title="Close booking modal">
+                    <i class="fas fa-times" style="font-size:0.85rem;"></i>
+                </button>
+            </div>
+
+            <!-- Service Summary -->
+            <div class="service-summary-card">
+                <h4 id="modalServiceName">Service</h4>
+                <div class="provider-line">
+                    <i class="fas fa-user-tie"></i> <span id="modalProviderName">Provider</span>
+                    <span id="modalServiceArea"></span>
+                </div>
+                <div class="price-rating">
+                    <div class="s-price" id="modalPrice">৳0</div>
+                    <div class="s-rating" id="modalRating"></div>
+                </div>
+            </div>
+
+            <form id="bookingForm" onsubmit="return false;">
+                <!-- When -->
+                <div class="form-section-label"><i class="fas fa-calendar"></i> When do you need this?</div>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>Preferred Date <span style="color:var(--danger)">*</span></label>
+                        <input type="date" id="bookingDate" class="form-control" title="Select your preferred booking date" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Preferred Time <span style="color:var(--danger)">*</span></label>
+                        <select id="bookingTimeSelect" class="form-control"
+                                style="display:none;"
+                                title="Preferred time"
+                                aria-label="Preferred time"></select>
+                        <div class="time-slots" id="timeSlotsGrid">
+                            <div class="time-slot selected" data-value="09:00" onclick="selectTime(this)">9:00 AM</div>
+                            <div class="time-slot" data-value="11:00" onclick="selectTime(this)">11:00 AM</div>
+                            <div class="time-slot" data-value="13:00" onclick="selectTime(this)">1:00 PM</div>
+                            <div class="time-slot" data-value="15:00" onclick="selectTime(this)">3:00 PM</div>
+                            <div class="time-slot" data-value="17:00" onclick="selectTime(this)">5:00 PM</div>
+                            <div class="time-slot" data-value="19:00" onclick="selectTime(this)">7:00 PM</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Where -->
+                <div class="form-section-label"><i class="fas fa-map-marker-alt"></i> Where should we come?</div>
+                <div class="form-group">
+                    <label>Full Address <span style="color:var(--danger)">*</span></label>
+                    <input type="text" id="bookingAddress" class="form-control"
+                           placeholder="House no., Road no., Area — be specific" required>
+                </div>
+                <div class="form-row-2">
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" id="bookingCity" class="form-control" placeholder="e.g. Dhaka">
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Number <span style="color:var(--danger)">*</span></label>
+                        <input type="tel" id="bookingPhone" class="form-control"
+                               placeholder="01XXXXXXXXX" maxlength="14" required>
+                    </div>
+                </div>
+
+                <!-- Problem -->
+                <div class="form-section-label"><i class="fas fa-clipboard-list"></i> Describe your problem</div>
+                <div class="form-group">
+                    <textarea id="bookingNotes" class="form-control" rows="4"
+                              placeholder="Tell the provider exactly what needs to be done. e.g. 'Main switch box tripped and 2 rooms have no power. Need same-day fix.'" required></textarea>
+                    <div class="field-hint"><i class="fas fa-info-circle"></i> The provider reviews this before accepting. Be as detailed as possible.</div>
+                </div>
+            </form>
+
+            <!-- Provider Reviews -->
+            <div id="providerReviewsSection" style="display:none; margin-top:16px;">
+                <div class="form-section-label" style="margin-bottom:8px;"><i class="fas fa-star" style="color:var(--warning);"></i> What customers say</div>
+                <div id="providerReviewsList" style="background:var(--bg-input); border-radius:10px; padding:12px;"></div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBookingModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-primary" id="confirmBookBtn" onclick="confirmBooking()">
+                    <i class="fas fa-paper-plane"></i> Send Booking Request
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        Auth.requireAuth('USER');
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.fullName || 'User';
+        document.getElementById('userAvatar').textContent = Auth.getInitials();
+
+        // Minimum date = tomorrow
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        document.getElementById('bookingDate').min = tomorrow.toISOString().split('T')[0];
+
+        let allServices    = [];
+        let selectedService = null;
+        let searchTimeout  = null;
+        let selectedTime   = '09:00';
+        const serviceMap   = {};
+
+        // Pre-select category from URL
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('category')) {
+            document.getElementById('categoryFilter').value = params.get('category');
+        }
+
+        // Search / Filter / Sort
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadServices, 300);
+        }
+
+        async function loadServices() {
+            const container = document.getElementById('servicesList');
+            container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;"><div class="spinner"></div></div>`;
+            try {
+                const query    = document.getElementById('searchInput').value.trim();
+                const category = document.getElementById('categoryFilter').value;
+                let response;
+                if (query)    response = await ApiService.searchServices(query);
+                else if (category) response = await ApiService.getServicesByCategory(category);
+                else          response = await ApiService.getServices();
+
+                allServices = response.data || response || [];
+                allServices.forEach(s => { serviceMap[s.id] = s; });
+                sortServices();
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="card" style="grid-column:1/-1;">
+                        <div class="card-body" style="text-align:center;padding:48px;color:var(--text-muted);">
+                            <i class="fas fa-server" style="font-size:40px;margin-bottom:16px;opacity:0.4;"></i>
+                            <h3>Could not load services</h3>
+                            <p>${err.message || 'Please ensure the backend server is running.'}</p>
+                            <button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="loadServices()">
+                                <i class="fas fa-redo"></i> Retry
+                            </button>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function sortServices() {
+            const sort   = document.getElementById('sortFilter').value;
+            let sorted   = [...allServices];
+            if (sort === 'price-low')  sorted.sort((a, b) => a.price - b.price);
+            else if (sort === 'price-high') sorted.sort((a, b) => b.price - a.price);
+            else if (sort === 'rating') sorted.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
+            renderServices(sorted);
+        }
+
+        //Render Cards 
+        function renderServices(services) {
+            const container = document.getElementById('servicesList');
+            if (!services.length) {
+                container.innerHTML = `
+                    <div class="card" style="grid-column:1/-1;">
+                        <div class="card-body" style="text-align:center;padding:56px;color:var(--text-muted);">
+                            <i class="fas fa-search" style="font-size:48px;margin-bottom:16px;opacity:0.4;"></i>
+                            <h3>No services found</h3>
+                            <p>Try a different search term or category</p>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = services.map(s => {
+                const cat          = s.category || 'OTHER';
+                const providerName = s.provider?.businessName || 'Provider';
+                const rating       = (s.averageRating || 0).toFixed(1);
+                const stars        = Math.round(s.averageRating || 0);
+                const starsHtml    = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+                return `
+                <div class="service-card">
+                    <div class="service-card-image" style="background:${getCategoryGradient(cat)};position:relative;">
+                        <i class="${getCategoryIcon(cat)}" style="color:rgba(255,255,255,0.92);"></i>
+                        ${s.featured ? '<span class="badge badge-completed" style="position:absolute;top:12px;right:12px;">Featured</span>' : ''}
+                    </div>
+                    <div class="service-card-body">
+                        <div class="service-card-category">${cat.replace(/_/g,' ')}</div>
+                        <h3 class="service-card-title">${escHtml(s.title)}</h3>
+                        <p class="service-card-desc">${escHtml(s.description || 'No description available')}</p>
+                        <p style="color:var(--primary);font-size:0.8rem;margin-bottom:8px;">
+                            <i class="fas fa-user-tie"></i> ${escHtml(providerName)}
+                            ${s.serviceArea ? ` &bull; <i class="fas fa-map-marker-alt"></i> ${escHtml(s.serviceArea)}` : ''}
+                        </p>
+                        ${s.duration ? `<p style="color:var(--text-muted);font-size:0.78rem;margin-bottom:8px;"><i class="fas fa-clock"></i> ${escHtml(s.duration)}</p>` : ''}
+                        <div class="service-card-meta">
+                            <div class="service-card-price">${formatCurrency(s.price)} <small>/service</small></div>
+                            <div class="service-card-rating" title="${rating} out of 5">
+                                <i class="fas fa-star"></i> ${rating}
+                                <span>(${s.totalBookings || 0})</span>
+                            </div>
+                        </div>
+                        <button class="btn-book" onclick="openBookingModal(${s.id})">
+                            <i class="fas fa-calendar-plus"></i> Book Now
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function escHtml(str) {
+            return String(str || '')
+                .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                .replace(/"/g,'&quot;');
+        }
+
+        //Time Slot Selection
+        function selectTime(el) {
+            document.querySelectorAll('.time-slot').forEach(t => t.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedTime = el.dataset.value;
+        }
+
+        //Open Booking Modal
+        async function openBookingModal(serviceId) {
+            const service = serviceMap[serviceId];
+            if (!service) { showToast('Service not found', 'error'); return; }
+            selectedService = service;
+
+            const providerName = service.provider?.businessName || 'Provider';
+            const rating       = (service.averageRating || 0).toFixed(1);
+
+            // Populate summary
+            document.getElementById('modalServiceName').textContent = service.title || 'Service';
+            document.getElementById('modalProviderName').textContent = providerName;
+            document.getElementById('modalServiceArea').innerHTML = service.serviceArea
+                ? ` &bull; <i class="fas fa-map-marker-alt"></i> ${escHtml(service.serviceArea)}`
+                : '';
+            document.getElementById('modalPrice').textContent = formatCurrency(service.price);
+            document.getElementById('modalRating').innerHTML =
+                `<i class="fas fa-star"></i> ${rating} &nbsp;<span style="color:var(--text-muted);font-size:0.8rem;">(${service.totalBookings || 0} bookings)</span>`;
+
+            // Reset form
+            document.getElementById('bookingForm').reset();
+            document.querySelectorAll('.time-slot').forEach((t,i) => {
+                t.classList.toggle('selected', i === 0);
+            });
+            selectedTime = '09:00';
+            document.getElementById('bookingCity').value = user.city || '';
+
+            // Open modal
+            document.getElementById('bookingModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+
+            // Load provider reviews async
+            const providerId = service.provider?.id;
+            const reviewsSection = document.getElementById('providerReviewsSection');
+            const reviewsList    = document.getElementById('providerReviewsList');
+            if (providerId) {
+                reviewsSection.style.display = 'block';
+                reviewsList.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">Loading reviews…</p>';
+                try {
+                    const revRes  = await ApiService.getReviewsByProvider(providerId);
+                    const reviews = (revRes.data || revRes || []).slice(0, 4);
+                    if (!reviews.length) {
+                        reviewsList.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">No reviews yet for this provider.</p>';
+                    } else {
+                        reviewsList.innerHTML = reviews.map(r => {
+                            const name = r.user?.fullName || r.reviewerName || 'Customer';
+                            const stars = '★'.repeat(r.rating || 0) + '☆'.repeat(5 - (r.rating || 0));
+                            return `
+                            <div class="review-item">
+                                <div class="review-meta">
+                                    <div class="avatar" style="width:28px;height:28px;font-size:11px;flex-shrink:0;">${name.charAt(0)}</div>
+                                    <strong style="font-size:0.85rem;">${escHtml(name)}</strong>
+                                    <span class="review-stars">${stars}</span>
+                                    <span class="review-date">${formatDate(r.createdAt)}</span>
+                                </div>
+                                <p>${escHtml(r.comment || '')}</p>
+                            </div>`;
+                        }).join('');
+                    }
+                } catch (_) {
+                    reviewsList.innerHTML = '<p style="color:var(--text-muted);font-size:0.85rem;">Could not load reviews.</p>';
+                }
+            } else {
+                reviewsSection.style.display = 'none';
+            }
+        }
+
+        function closeBookingModal() {
+            document.getElementById('bookingModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function handleOverlayClick(e) {
+            if (e.target === document.getElementById('bookingModal')) closeBookingModal();
+        }
+
+        //Confirm Booking
+        async function confirmBooking() {
+            const date    = document.getElementById('bookingDate').value;
+            const address = document.getElementById('bookingAddress').value.trim();
+            const phone   = document.getElementById('bookingPhone').value.trim();
+            const notes   = document.getElementById('bookingNotes').value.trim();
+
+            if (!date)    { showToast('Please select a date', 'error');                 document.getElementById('bookingDate').focus();    return; }
+            if (!address) { showToast('Please enter your service address', 'error');    document.getElementById('bookingAddress').focus(); return; }
+            if (!phone)   { showToast('Please enter your contact number', 'error');     document.getElementById('bookingPhone').focus();   return; }
+            if (!notes)   { showToast('Please describe your problem or requirement', 'error'); document.getElementById('bookingNotes').focus(); return; }
+
+            const btn = document.getElementById('confirmBookBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending…';
+
+            try {
+                await ApiService.createBooking({
+                    serviceId:   selectedService.id,
+                    bookingDate: date,
+                    bookingTime: selectedTime,
+                    address,
+                    city:  document.getElementById('bookingCity').value.trim(),
+                    phone,
+                    notes
+                });
+
+                // Success — show confirmation overlay
+                closeBookingModal();
+                showBookingConfirmation();
+            } catch (err) {
+                showToast(err.message || 'Booking failed. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Booking Request';
+            }
+        }
+
+        function showBookingConfirmation() {
+            const overlay = document.createElement('div');
+            overlay.className = 'modal-overlay active';
+            overlay.innerHTML = `
+                <div class="modal" style="max-width:420px;text-align:center;padding:40px 32px;">
+                    <div style="width:72px;height:72px;background:rgba(0,217,166,0.15);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:2rem;color:var(--accent);">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 style="margin-bottom:10px;">Booking Request Sent!</h2>
+                    <p style="color:var(--text-muted);margin-bottom:6px;">Your request has been sent to <strong>${escHtml(selectedService?.provider?.businessName || 'the provider')}</strong>.</p>
+                    <p style="color:var(--text-muted);margin-bottom:24px;font-size:0.88rem;">You will be notified once the provider accepts. Meanwhile, you can track it in <strong>My Bookings</strong>.</p>
+                    <div style="display:flex;gap:10px;justify-content:center;">
+                        <a href="bookings.html" class="btn btn-primary"><i class="fas fa-calendar-check"></i> View My Bookings</a>
+                        <button class="btn btn-secondary" onclick="this.closest('.modal-overlay').remove();document.body.style.overflow='';">
+                            Browse More
+                        </button>
+                    </div>
+                </div>`;
+            document.body.appendChild(overlay);
+        }
+
+        // Close modal on Escape
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBookingModal(); });
+
+        loadServices();
+    </script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Bookings - SmartService</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><div class="icon">SS</div><span>SmartService</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="browse.html" class="nav-item"><i class="fas fa-search"></i><span>Browse Services</span></a>
+            <a href="bookings.html" class="nav-item active"><i class="fas fa-calendar"></i><span>My Bookings</span></a>
+            <a href="profile.html" class="nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">U</div>
+                <div class="user-details"><span class="name" id="userName">User</span><span class="role">Customer</span></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Auth.logout()" style="width:100%; margin-top: 12px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+            <h2>My Bookings</h2>
+            <div class="topbar-right">
+                <a href="browse.html" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> New Booking</a>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <!-- Filters -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-body" style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                    <div class="tab-nav">
+                        <button class="tab-btn active" onclick="filterBookings('ALL', this)">All</button>
+                        <button class="tab-btn" onclick="filterBookings('PENDING', this)">Pending</button>
+                        <button class="tab-btn" onclick="filterBookings('CONFIRMED', this)">Confirmed</button>
+                        <button class="tab-btn" onclick="filterBookings('COMPLETED', this)">Completed</button>
+                        <button class="tab-btn" onclick="filterBookings('CANCELLED', this)">Cancelled</button>
+                        <button class="tab-btn" onclick="filterBookings('REJECTED', this)">Rejected</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bookings List -->
+            <div id="bookingsList">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Review Modal -->
+    <div class="modal-overlay" id="reviewModal" onclick="handleReviewOverlayClick(event)">
+        <div class="modal" style="max-width:460px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-star" style="color:var(--warning);margin-right:8px;"></i> Leave a Review</h3>
+                <button class="modal-close" onclick="closeReviewModal()" title="Close modal">
+                    <i class="fas fa-times" style="font-size:0.85rem;"></i>
+                </button>
+            </div>
+
+            <!-- Service being reviewed -->
+            <div id="reviewServiceInfo" style="padding:12px 14px; background:var(--bg-input); border-radius:10px; margin-bottom:20px; font-size:0.88rem; color:var(--text-muted);"></div>
+
+            <div class="form-group">
+                <label style="margin-bottom:10px;">Your Rating <span style="color:var(--danger)">*</span></label>
+                <div id="starInput" style="display:flex; gap:6px; cursor:pointer;">
+                    <i class="fas fa-star" data-rating="1" onclick="setRating(1)" style="font-size:32px;color:var(--text-muted);transition:color 0.15s;"></i>
+                    <i class="fas fa-star" data-rating="2" onclick="setRating(2)" style="font-size:32px;color:var(--text-muted);transition:color 0.15s;"></i>
+                    <i class="fas fa-star" data-rating="3" onclick="setRating(3)" style="font-size:32px;color:var(--text-muted);transition:color 0.15s;"></i>
+                    <i class="fas fa-star" data-rating="4" onclick="setRating(4)" style="font-size:32px;color:var(--text-muted);transition:color 0.15s;"></i>
+                    <i class="fas fa-star" data-rating="5" onclick="setRating(5)" style="font-size:32px;color:var(--text-muted);transition:color 0.15s;"></i>
+                </div>
+                <div id="ratingLabel" style="margin-top:6px;font-size:0.82rem;color:var(--text-muted);min-height:18px;"></div>
+            </div>
+            <div class="form-group">
+                <label for="reviewComment">Your Review</label>
+                <textarea id="reviewComment" class="form-control" rows="4"
+                          placeholder="Share your experience with the provider. Was the work done on time? Quality of work? Would you recommend?"></textarea>
+            </div>
+
+            <div style="display:flex;justify-content:flex-end;gap:10px;padding-top:16px;border-top:1px solid var(--border-color);margin-top:4px;">
+                <button class="btn btn-secondary" onclick="closeReviewModal()">Cancel</button>
+                <button class="btn btn-primary" id="submitReviewBtn" onclick="submitReview()">
+                    <i class="fas fa-paper-plane"></i> Submit Review
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        Auth.requireAuth('USER');
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.fullName || 'User';
+        document.getElementById('userAvatar').textContent = Auth.getInitials();
+
+        let allBookings     = [];
+        let currentFilter   = 'ALL';
+        let reviewBookingId = null;
+        let reviewBookingObj= null;
+        let selectedRating  = 0;
+
+        const RATING_LABELS = ['','Terrible','Poor','Okay','Good','Excellent'];
+
+        async function loadBookings() {
+            const container = document.getElementById('bookingsList');
+            container.innerHTML = `<div style="text-align:center;padding:40px;"><div class="spinner"></div></div>`;
+            try {
+                const response = await ApiService.getMyBookings();
+                allBookings = response.data || response || [];
+                renderBookings();
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="card">
+                        <div class="card-body" style="text-align:center;padding:48px;color:var(--text-muted);">
+                            <i class="fas fa-exclamation-circle" style="font-size:40px;margin-bottom:12px;color:var(--danger);opacity:0.7;"></i>
+                            <h3>Could not load bookings</h3>
+                            <p>${err.message || 'Please check your connection.'}</p>
+                            <button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="loadBookings()">
+                                <i class="fas fa-redo"></i> Retry
+                            </button>
+                        </div>
+                    </div>`;
+            }
+        }
+
+        function filterBookings(status, btn) {
+            currentFilter = status;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderBookings();
+        }
+
+        function renderBookings() {
+            const filtered  = currentFilter === 'ALL'
+                ? allBookings
+                : allBookings.filter(b => b.status === currentFilter);
+            const container = document.getElementById('bookingsList');
+
+            if (!filtered.length) {
+                container.innerHTML = `
+                    <div class="card">
+                        <div class="card-body" style="text-align:center;padding:56px;color:var(--text-muted);">
+                            <i class="fas fa-calendar-times" style="font-size:48px;margin-bottom:16px;opacity:0.4;"></i>
+                            <h3>No bookings found</h3>
+                            <p>You don't have any ${currentFilter !== 'ALL' ? currentFilter.toLowerCase().replace('_',' ') : ''} bookings yet.</p>
+                            <a href="browse.html" class="btn btn-primary" style="margin-top:16px;">
+                                <i class="fas fa-search"></i> Browse Services
+                            </a>
+                        </div>
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(b => {
+                const serviceName  = b.service?.title || 'Service';
+                const providerName = b.provider?.businessName || '-';
+                const statusBadge  = getStatusBadge(b.status);
+
+                // Status message strip
+                const statusMsg = {
+                    PENDING:   `<div class="status-strip pending"><i class="fas fa-clock"></i> Waiting for provider to accept your request…</div>`,
+                    CONFIRMED: `<div class="status-strip confirmed"><i class="fas fa-check-circle"></i> <strong>Appointment Confirmed!</strong> The provider has accepted your booking.</div>`,
+                    COMPLETED: `<div class="status-strip completed"><i class="fas fa-check-double"></i> Service completed. Please leave a review!</div>`,
+                    CANCELLED: `<div class="status-strip cancelled"><i class="fas fa-times-circle"></i> Booking cancelled.</div>`,
+                    REJECTED:  `<div class="status-strip rejected"><i class="fas fa-ban"></i> Booking rejected by provider.${b.rejectionReason ? ' <em>' + escHtml(b.rejectionReason) + '</em>' : ''}</div>`
+                }[b.status] || '';
+
+                return `
+                <div class="card" style="margin-bottom:16px;">
+                    <div class="card-body">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;">
+                            <!-- Left: info -->
+                            <div style="flex:1;min-width:220px;">
+                                <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap;">
+                                    <h3 style="margin:0;font-size:1.05rem;">${escHtml(serviceName)}</h3>
+                                    ${statusBadge}
+                                </div>
+                                ${statusMsg}
+                                <div style="display:flex;flex-direction:column;gap:4px;color:var(--text-muted);font-size:0.84rem;margin-top:8px;">
+                                    <span><i class="fas fa-user-tie" style="width:16px;"></i> <strong style="color:var(--text-primary);">${escHtml(providerName)}</strong></span>
+                                    <span><i class="fas fa-calendar" style="width:16px;"></i> ${formatDate(b.bookingDate || b.createdAt)}${b.bookingTime ? ' at ' + formatTime(b.bookingTime) : ''}</span>
+                                    <span><i class="fas fa-map-marker-alt" style="width:16px;"></i> ${escHtml(b.address || '-')}${b.city ? ', ' + escHtml(b.city) : ''}</span>
+                                    ${b.phone ? `<span><i class="fas fa-phone" style="width:16px;"></i> ${escHtml(b.phone)}</span>` : ''}
+                                    ${b.notes ? `<span style="margin-top:4px;"><i class="fas fa-clipboard-list" style="width:16px;"></i> <em>${escHtml(b.notes)}</em></span>` : ''}
+                                </div>
+                            </div>
+                            <!-- Right: amount + actions -->
+                            <div style="text-align:right;min-width:130px;display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
+                                <div>
+                                    <div style="font-size:1.1rem;font-weight:800;color:var(--accent);">৳${Number(b.totalAmount||0).toLocaleString('en-IN')}</div>
+                                    <div style="font-size:0.72rem;color:var(--text-muted);">${formatDateTime(b.createdAt)}</div>
+                                </div>
+                                <div style="display:flex;flex-direction:column;gap:6px;width:100%;">
+                                    ${b.status === 'PENDING' ? `
+                                        <button class="btn btn-sm btn-danger" onclick="cancelBooking(${b.id})" style="width:100%;">
+                                            <i class="fas fa-times"></i> Cancel
+                                        </button>` : ''}
+                                    ${b.status === 'COMPLETED' ? `
+                                        <button class="btn btn-sm btn-primary" onclick="openReviewModal(${b.id})" style="width:100%;" id="reviewBtn-${b.id}">
+                                            <i class="fas fa-star"></i> Leave Review
+                                        </button>` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function escHtml(str) {
+            return String(str || '')
+                .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+                .replace(/"/g,'&quot;');
+        }
+
+        function formatTime(t) {
+            if (!t) return '';
+            const [h, m] = t.split(':').map(Number);
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            const hour12= h % 12 || 12;
+            return `${hour12}:${String(m).padStart(2,'0')} ${ampm}`;
+        }
+
+        async function cancelBooking(id) {
+            if (!confirm('Are you sure you want to cancel this booking?')) return;
+            try {
+                await ApiService.cancelBooking(id);
+                showToast('Booking cancelled successfully', 'success');
+                loadBookings();
+            } catch (err) {
+                showToast(err.message || 'Failed to cancel booking', 'error');
+            }
+        }
+
+        //  Review Modal 
+        function openReviewModal(bookingId) {
+            reviewBookingId  = bookingId;
+            reviewBookingObj = allBookings.find(b => b.id === bookingId) || null;
+            selectedRating   = 0;
+            document.getElementById('reviewComment').value = '';
+            document.getElementById('ratingLabel').textContent = '';
+            updateStars();
+
+            // Show service info
+            if (reviewBookingObj) {
+                const s = reviewBookingObj;
+                document.getElementById('reviewServiceInfo').innerHTML =
+                    `<i class="fas fa-concierge-bell" style="color:var(--primary);margin-right:6px;"></i>
+                     <strong>${escHtml(s.service?.title || 'Service')}</strong>
+                     &nbsp;by&nbsp; <strong>${escHtml(s.provider?.businessName || 'Provider')}</strong>`;
+            }
+
+            document.getElementById('reviewModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeReviewModal() {
+            document.getElementById('reviewModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function handleReviewOverlayClick(e) {
+            if (e.target === document.getElementById('reviewModal')) closeReviewModal();
+        }
+
+        function setRating(rating) {
+            selectedRating = rating;
+            updateStars();
+            document.getElementById('ratingLabel').textContent = RATING_LABELS[rating] || '';
+            document.getElementById('ratingLabel').style.color = rating >= 4 ? 'var(--accent)' : rating <= 2 ? 'var(--danger)' : 'var(--warning)';
+        }
+
+        function updateStars() {
+            document.querySelectorAll('#starInput .fa-star').forEach(star => {
+                const r = parseInt(star.dataset.rating);
+                star.style.color = r <= selectedRating ? '#FFB800' : 'var(--text-muted)';
+            });
+        }
+
+        async function submitReview() {
+            if (selectedRating === 0) { showToast('Please select a rating', 'error'); return; }
+            const comment = document.getElementById('reviewComment').value.trim();
+
+            const btn = document.getElementById('submitReviewBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting…';
+            try {
+                await ApiService.createReview({
+                    bookingId: reviewBookingId,
+                    rating:    selectedRating,
+                    comment
+                });
+                showToast('Review submitted! Thank you.', 'success');
+                closeReviewModal();
+                loadBookings();
+            } catch (err) {
+                showToast(err.message || 'Failed to submit review', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Review';
+            }
+        }
+
+        // Escape key
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') closeReviewModal(); });
+
+        loadBookings();
+    </script>
+    <style>
+        .status-strip { margin: 8px 0; padding: 8px 12px; border-radius: 6px; font-size: 0.83rem; border-left: 3px solid; }
+        .status-strip.pending   { background: rgba(255,184,0,0.12); border-color: var(--warning);  color: var(--warning);  }
+        .status-strip.confirmed { background: rgba(0,217,166,0.12); border-color: var(--accent);   color: var(--accent);   }
+        .status-strip.completed { background: rgba(108,99,255,0.1); border-color: var(--primary);  color: var(--text-muted); }
+        .status-strip.cancelled { background: rgba(255,71,87,0.1);  border-color: var(--danger);   color: var(--danger);   }
+        .status-strip.rejected  { background: rgba(255,71,87,0.1);  border-color: var(--danger);   color: var(--danger);   }
+    </style>
+</body>
+</html>

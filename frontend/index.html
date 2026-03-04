@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Service - Community Service Platform</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <div id="navbar-container"></div>
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-content">
+                <h1>Find Trusted <span class="text-gradient">Local Services</span> Near You</h1>
+                <p>Book electricians, plumbers, tutors, and more — all in one platform.</p>
+                <div class="hero-buttons">
+                    <a href="user/register.html" class="btn btn-primary btn-lg">
+                        <i class="fas fa-rocket"></i> Book a Service
+                    </a>
+                    <a href="user/register.html?role=provider" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-tools"></i> Become a Provider
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <h3 id="heroProviderCount">...</h3>
+                        <p>Active Providers</p>
+                    </div>
+                    <div class="hero-stat">
+                        <h3 id="heroServiceCount">...</h3>
+                        <p>Services Available</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Categories -->
+    <section class="section" id="categories" style="background: var(--bg-card);">
+        <div class="container">
+            <div class="section-header">
+                <h2>Browse by <span class="text-gradient">Category</span></h2>
+                <p>Find exactly the service you need from our wide range of categories</p>
+            </div>
+            <div class="category-grid">
+                <div class="category-card" onclick="location.href='user/browse.html?category=ELECTRICIAN'">
+                    <i class="fas fa-bolt"></i>
+                    <h4>Electrician</h4>
+                    <p>Wiring, repairs & more</p>
+                </div>
+                <div class="category-card" onclick="location.href='user/browse.html?category=PLUMBER'">
+                    <i class="fas fa-wrench"></i>
+                    <h4>Plumber</h4>
+                    <p>Pipes, leaks & fittings</p>
+                </div>
+                <div class="category-card" onclick="location.href='user/browse.html?category=TUTOR'">
+                    <i class="fas fa-graduation-cap"></i>
+                    <h4>Tutor</h4>
+                    <p>Math, Science & English</p>
+                </div>
+                <div class="category-card" onclick="location.href='user/browse.html?category=CLEANER'">
+                    <i class="fas fa-broom"></i>
+                    <h4>Cleaner</h4>
+                    <p>Home & office cleaning</p>
+                </div>
+                <div class="category-card" onclick="location.href='user/browse.html?category=CARPENTER'">
+                    <i class="fas fa-hammer"></i>
+                    <h4>Carpenter</h4>
+                    <p>Furniture & woodwork</p>
+                </div>
+                <div class="category-card" onclick="location.href='user/browse.html?category=PAINTER'">
+                    <i class="fas fa-paint-roller"></i>
+                    <h4>Painter</h4>
+                    <p>Interior & exterior</p>
+                </div>
+                <div class="category-card" onclick="location.href='user/browse.html?category=AC_REPAIR'">
+                    <i class="fas fa-snowflake"></i>
+                    <h4>AC Repair</h4>
+                    <p>Service & installation</p>
+                </div>
+                <div class="category-card" onclick="location.href='user/browse.html?category=HOME_SHIFTING'">
+                    <i class="fas fa-truck"></i>
+                    <h4>Home Shifting</h4>
+                    <p>Pack, move & unpack</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="section" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <h2>How It <span class="text-gradient">Works</span></h2>
+                <p>Getting started is easy — just 3 simple steps</p>
+            </div>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3>1. Find a Service</h3>
+                    <p>Browse through categories or search for the specific service you need. Filter by location, price, and rating.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                    <h3>2. Book & Schedule</h3>
+                    <p>Choose your preferred date, time, and provide your address. Confirm your booking with just one click.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h3>3. Get Service & Review</h3>
+                    <p>Receive professional service at your doorstep. Rate and review the provider to help the community.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Provider CTA -->
+    <section class="section" style="background: var(--bg-card);">
+        <div class="container text-center">
+            <h2 style="margin-bottom: 16px;">Are You a Service Provider?</h2>
+            <p style="color: var(--text-muted); max-width: 600px; margin: 0 auto 32px;">
+                Join our growing community of verified service providers. 
+                Reach more customers, manage bookings easily, and grow your business.
+            </p>
+            <a href="user/register.html?role=provider" class="btn btn-accent btn-lg">
+                <i class="fas fa-user-plus"></i> Register as Provider
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <h3>🔧 SmartService</h3>
+                    <p>Your trusted community service platform. Connecting skilled professionals with customers who need quality service.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Services</h4>
+                    <a href="#">Electrician</a>
+                    <a href="#">Plumber</a>
+                    <a href="#">Tutor</a>
+                    <a href="#">Cleaner</a>
+                    <a href="#">Carpenter</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Company</h4>
+                    <a href="#">About Us</a>
+                    <a href="#">Contact</a>
+                    <a href="#">Careers</a>
+                    <a href="#">Blog</a>
+                </div>
+                <div class="footer-links">
+                    <h4>Support</h4>
+                    <a href="#">Help Center</a>
+                    <a href="#">Safety</a>
+                    <a href="#">Terms</a>
+                    <a href="#">Privacy</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 SmartService. Emam Hassan</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/auth.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script>
+        fetch('components/navbar.html')
+            .then(r => r.text())
+            .then(html => document.getElementById('navbar-container').innerHTML = html)
+            .catch(() => {
+                document.getElementById('navbar-container').innerHTML = `
+                    <nav class="landing-nav">
+                        <div class="container">
+                            <a href="index.html" class="nav-brand"><div class="icon">SS</div>SmartService</a>
+                            <div class="nav-links">
+                                <a href="user/login.html" class="btn btn-secondary btn-sm">Login</a>
+                                <a href="user/register.html" class="btn btn-primary btn-sm">Get Started</a>
+                            </div>
+                        </div>
+                    </nav>`;
+            });
+
+        if (Auth.isLoggedIn()) {
+            const role = Auth.getRole();
+            if (role === 'ADMIN') window.location.href = 'admin/dashboard.html';
+            else if (role === 'PROVIDER') window.location.href = 'provider/dashboard.html';
+            else window.location.href = 'user/dashboard.html';
+        }
+
+        async function loadHeroStats() {
+            try {
+                const [provRes, svcRes] = await Promise.all([
+                    ApiService.getProviders(),
+                    ApiService.getServices()
+                ]);
+                const provCount = (provRes.data || []).length;
+                const svcCount = (svcRes.data || []).length;
+                document.getElementById('heroProviderCount').textContent = provCount > 0 ? provCount + '+' : '...';
+                document.getElementById('heroServiceCount').textContent = svcCount > 0 ? svcCount + '+' : '...';
+            } catch (e) {
+                document.getElementById('heroProviderCount').textContent = '500+';
+                document.getElementById('heroServiceCount').textContent = '100+';
+            }
+        }
+
+        loadHeroStats();
+    </script>
+</body>
+</html>

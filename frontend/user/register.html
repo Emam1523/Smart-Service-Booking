@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - SmartService</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body class="auth-page">
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <a href="../index.html" class="auth-logo">
+                    <div class="icon">SS</div>
+                    SmartService
+                </a>
+                <h2>Create Account</h2>
+                <p>Join our community of service providers and customers</p>
+            </div>
+
+            <!-- Role Selector -->
+            <div class="role-selector">
+                <button class="role-btn active" data-role="USER" onclick="switchRole('USER', this)">
+                    <i class="fas fa-user"></i> Customer
+                </button>
+                <button class="role-btn" data-role="PROVIDER" onclick="switchRole('PROVIDER', this)">
+                    <i class="fas fa-tools"></i> Service Provider
+                </button>
+            </div>
+
+            <form id="registerForm" class="auth-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <div class="input-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" id="fullName" class="form-control" placeholder="Enter your full name" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <div class="input-icon">
+                            <i class="fas fa-envelope"></i>
+                            <input type="email" id="email" class="form-control" placeholder="Enter your email" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <div class="input-icon">
+                            <i class="fas fa-phone"></i>
+                            <input type="tel" id="phone" class="form-control" placeholder="01XXXXXXXXX" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <div class="input-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <input type="text" id="address" class="form-control" placeholder="Enter your address" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <div class="input-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="password" class="form-control" placeholder="Min 6 characters" required minlength="6">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirmPassword">Confirm Password</label>
+                        <div class="input-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" id="confirmPassword" class="form-control" placeholder="Confirm password" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Provider-only fields -->
+                <div id="providerFields" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="businessName">Business Name</label>
+                            <div class="input-icon">
+                                <i class="fas fa-building"></i>
+                                <input type="text" id="businessName" class="form-control" placeholder="Your business name">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="category">Service Category</label>
+                            <select id="category" class="form-control">
+                                <option value="ELECTRICIAN">Electrician</option>
+                                <option value="PLUMBER">Plumber</option>
+                                <option value="TUTOR">Tutor</option>
+                                <option value="CLEANER">Cleaner</option>
+                                <option value="CARPENTER">Carpenter</option>
+                                <option value="PAINTER">Painter</option>
+                                <option value="AC_REPAIR">AC Repair</option>
+                                <option value="HOME_SHIFTING">Home Shifting</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="experience">Years of Experience</label>
+                            <div class="input-icon">
+                                <i class="fas fa-briefcase"></i>
+                                <input type="number" id="experience" class="form-control" placeholder="e.g. 5" min="0">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <div class="input-icon">
+                                <i class="fas fa-city"></i>
+                                <input type="text" id="city" class="form-control" placeholder="Your city">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">About / Description</label>
+                        <textarea id="description" class="form-control" rows="3" placeholder="Tell us about your skills and services"></textarea>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block" id="registerBtn">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </form>
+
+            <div class="auth-footer">
+                <p>Already have an account? <a href="login.html">Sign in</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        let selectedRole = 'USER';
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('role') === 'provider') {
+            switchRole('PROVIDER', document.querySelector('[data-role="PROVIDER"]'));
+        }
+
+        if (Auth.isLoggedIn()) {
+            Auth.redirectToDashboard();
+        }
+
+        function switchRole(role, btn) {
+            selectedRole = role;
+            document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('providerFields').style.display = role === 'PROVIDER' ? 'block' : 'none';
+        }
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (password !== confirmPassword) {
+                showToast('Passwords do not match!', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('registerBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
+
+            try {
+                const data = {
+                    fullName: document.getElementById('fullName').value,
+                    email: document.getElementById('email').value,
+                    password: password,
+                    phone: document.getElementById('phone').value,
+                    address: document.getElementById('address').value,
+                    role: selectedRole
+                };
+
+                if (selectedRole === 'PROVIDER') {
+                    data.businessName = document.getElementById('businessName').value;
+                    data.primaryCategory = document.getElementById('category').value;
+                    data.experienceYears = parseInt(document.getElementById('experience').value) || 0;
+                    data.city = document.getElementById('city').value;
+                    data.description = document.getElementById('description').value;
+                }
+
+                const response = await ApiService.register(data);
+                showToast('Registration successful! Please log in.', 'success');
+                setTimeout(() => window.location.href = 'login.html', 1500);
+            } catch (error) {
+                showToast(error.message || 'Registration failed. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-user-plus"></i> Create Account';
+            }
+        });
+    </script>
+</body>
+</html>

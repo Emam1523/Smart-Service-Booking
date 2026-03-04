@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Bookings - SmartService</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><div class="icon">SS</div><span>SmartService</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="services.html" class="nav-item"><i class="fas fa-concierge-bell"></i><span>My Services</span></a>
+            <a href="bookings.html" class="nav-item active"><i class="fas fa-calendar"></i><span>Bookings</span></a>
+            <a href="reviews.html" class="nav-item"><i class="fas fa-star"></i><span>Reviews</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">P</div>
+                <div class="user-details"><span class="name" id="userName">Provider</span><span class="role">Service Provider</span></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Auth.logout()" style="width:100%; margin-top: 12px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <button type="button" class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+            <h2>Manage Bookings</h2>
+        </div>
+
+        <div class="content-area">
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-body">
+                    <div class="tab-nav">
+                        <button type="button" class="tab-btn active" onclick="filterBookings('ALL', this)">All</button>
+                        <button type="button" class="tab-btn" onclick="filterBookings('PENDING', this)">Pending</button>
+                        <button type="button" class="tab-btn" onclick="filterBookings('CONFIRMED', this)">Confirmed</button>
+                        <button type="button" class="tab-btn" onclick="filterBookings('COMPLETED', this)">Completed</button>
+                        <button type="button" class="tab-btn" onclick="filterBookings('CANCELLED', this)">Cancelled</button>
+                        <button type="button" class="tab-btn" onclick="filterBookings('REJECTED', this)">Rejected</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bookingsList">
+                <div class="spinner"></div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        Auth.requireAuth('PROVIDER');
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.fullName || 'Provider';
+        document.getElementById('userAvatar').textContent = Auth.getInitials();
+
+        let allBookings = [];
+        let currentFilter = 'ALL';
+
+        async function loadBookings() {
+            try {
+                const response = await ApiService.getProviderBookings();
+                allBookings = response.data || [];
+                renderBookings();
+            } catch (e) {
+                document.getElementById('bookingsList').innerHTML =
+                    '<div class="card"><div class="card-body text-center" style="color:var(--text-muted);">Failed to load bookings</div></div>';
+            }
+        }
+
+        function filterBookings(status, btn) {
+            currentFilter = status;
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderBookings();
+        }
+
+        function renderBookings() {
+            const filtered = currentFilter === 'ALL' ? allBookings : allBookings.filter(b => b.status === currentFilter);
+            const container = document.getElementById('bookingsList');
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="card"><div class="card-body text-center" style="padding: 48px; color:var(--text-muted);">
+                        <i class="fas fa-calendar-times" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;"></i>
+                        <h3>No ${currentFilter !== 'ALL' ? currentFilter.toLowerCase().replace('_', ' ') : ''} bookings</h3>
+                    </div></div>`;
+                return;
+            }
+
+            container.innerHTML = filtered.map(b => `
+                <div class="card" style="margin-bottom: 16px;">
+                    <div class="card-body">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+                            <div style="flex: 1; min-width: 200px;">
+                                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                                    <h3 style="margin: 0;">${(b.service && b.service.title) || 'Service'}</h3>
+                                    ${getStatusBadge(b.status)}
+                                </div>
+                                <p style="color:var(--text-muted); margin-bottom: 4px;"><i class="fas fa-user"></i> Customer: <strong>${(b.user && b.user.fullName) || '-'}</strong></p>
+                                <p style="color:var(--text-muted); margin-bottom: 4px;"><i class="fas fa-phone"></i> Contact: <strong>${b.phone || '-'}</strong></p>
+                                <p style="color:var(--text-muted); margin-bottom: 4px;"><i class="fas fa-calendar"></i> ${formatDate(b.bookingDate || b.createdAt)} ${b.bookingTime ? 'at ' + b.bookingTime : ''}</p>
+                                <p style="color:var(--text-muted); margin-bottom: 4px;"><i class="fas fa-map-marker-alt"></i> ${b.address || '-'}${b.city ? ', ' + b.city : ''}</p>
+                                ${b.notes ? `
+                                <div style="margin-top: 10px; padding: 10px 14px; background: rgba(255,180,0,0.10); border-left: 3px solid var(--warning); border-radius: 6px;">
+                                    <p style="margin: 0; font-size: 13px; color: var(--text-main);"><i class="fas fa-clipboard-list" style="color:var(--warning);"></i> <strong>Customer's Problem:</strong></p>
+                                    <p style="margin: 4px 0 0 0; font-size: 14px;">${b.notes}</p>
+                                </div>` : ''}
+                                ${b.rejectionReason ? `<p style="color:var(--danger); margin-top: 8px; font-size: 13px;"><i class="fas fa-ban"></i> Rejection reason: ${b.rejectionReason}</p>` : ''}
+                            </div>
+                            <div style="text-align: right; min-width: 200px;">
+                                <p style="color:var(--text-muted); font-size: 12px; margin-bottom: 8px;">${formatDateTime(b.createdAt)}</p>
+                                <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                                    ${b.status === 'PENDING' ? `
+                                        <button class="btn btn-sm btn-accent" onclick="acceptBooking(${b.id})"><i class="fas fa-check"></i> Accept</button>
+                                        <button class="btn btn-sm btn-danger" onclick="rejectBooking(${b.id})"><i class="fas fa-times"></i> Reject</button>
+                                    ` : ''}
+                                    ${b.status === 'CONFIRMED' ? `
+                                        <button class="btn btn-sm btn-accent" onclick="completeBooking(${b.id})"><i class="fas fa-check-double"></i> Mark Completed</button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function acceptBooking(id) {
+            try { await ApiService.acceptBooking(id); showToast('Booking accepted! Appointment confirmed.', 'success'); loadBookings(); }
+            catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+        async function rejectBooking(id) {
+            const reason = prompt('Reason for rejection (optional):');
+            if (reason === null) return; // user cancelled prompt
+            try { await ApiService.rejectBooking(id, reason); showToast('Booking rejected', 'success'); loadBookings(); }
+            catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+        async function completeBooking(id) {
+            try { await ApiService.completeBooking(id); showToast('Service completed!', 'success'); loadBookings(); }
+            catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+
+        loadBookings();
+    </script>
+</body>
+</html>

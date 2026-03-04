@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Users - SmartService Admin</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><div class="icon">SS</div><span>SmartService</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            <a href="users.html" class="nav-item active"><i class="fas fa-users"></i><span>Users</span></a>
+            <a href="providers.html" class="nav-item"><i class="fas fa-user-tie"></i><span>Providers</span></a>
+            <a href="bookings.html" class="nav-item"><i class="fas fa-calendar"></i><span>Bookings</span></a>
+            <a href="reviews.html" class="nav-item"><i class="fas fa-star"></i><span>Reviews</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">A</div>
+                <div class="user-details"><span class="name" id="userName">Admin</span><span class="role">Administrator</span></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Auth.logout()" style="width:100%; margin-top: 12px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <button type="button" class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            <h2>Manage Users</h2>
+        </div>
+
+        <div class="content-area">
+            <!-- Search -->
+            <div class="card" style="margin-bottom: 24px;">
+                <div class="card-body" style="display: flex; gap: 12px; align-items: center;">
+                    <div class="input-icon" style="flex: 1;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" class="form-control" placeholder="Search users by name or email..." oninput="debounceSearch()">
+                    </div>
+                    <select id="roleFilter" class="form-control role-filter" title="Filter users by role" onchange="loadUsers()">
+                        <option value="USER" selected>Customers Only</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Users Table -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        Auth.requireAuth('ADMIN');
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.fullName || 'Admin';
+        document.getElementById('userAvatar').textContent = Auth.getInitials();
+
+        let searchTimeout = null;
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(loadUsers, 300);
+        }
+
+        async function loadUsers() {
+            const tbody = document.getElementById('usersTable');
+            tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;"><div class="spinner"></div></td></tr>';
+
+            try {
+                const response = await ApiService.getAdminUsers();
+                let users = response.data || [];
+
+                // Client-side filtering
+                const search = document.getElementById('searchInput').value.toLowerCase();
+                const role = document.getElementById('roleFilter').value;
+
+                if (search) {
+                    users = users.filter(u => (u.fullName || '').toLowerCase().includes(search) || (u.email || '').toLowerCase().includes(search));
+                }
+                if (role) {
+                    users = users.filter(u => u.role === role);
+                }
+
+                if (users.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">No users found</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = users.map(u => `
+                    <tr>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="avatar" style="width:36px;height:36px;font-size:13px;">${(u.fullName || 'U').charAt(0)}</div>
+                                <strong>${u.fullName || '-'}</strong>
+                            </div>
+                        </td>
+                        <td>${u.email || '-'}</td>
+                        <td>${u.phone || '-'}</td>
+                        <td><span class="badge badge-${u.role === 'ADMIN' ? 'primary' : u.role === 'PROVIDER' ? 'warning' : 'info'}">${u.role}</span></td>
+                        <td>
+                            ${u.banned 
+                                ? '<span class="badge badge-danger">Banned</span>'
+                                : '<span class="badge badge-success">Active</span>'}
+                        </td>
+                        <td>${formatDate(u.createdAt)}</td>
+                        <td>
+                            ${u.role !== 'ADMIN' ? `
+                                ${u.banned 
+                                    ? `<button class="btn btn-sm btn-accent" onclick="unbanUser(${u.id})"><i class="fas fa-unlock"></i></button>`
+                                    : `<button class="btn btn-sm btn-warning" onclick="banUser(${u.id})"><i class="fas fa-ban"></i></button>`}
+                                <button class="btn btn-sm btn-danger" onclick="deleteUser(${u.id})"><i class="fas fa-trash"></i></button>
+                            ` : '<span style="color:var(--text-muted);">-</span>'}
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color:var(--text-muted);">Failed to load users</td></tr>';
+            }
+        }
+
+        async function banUser(id) {
+            if (!confirm('Ban this user?')) return;
+            try { await ApiService.banUser(id); showToast('User banned', 'success'); loadUsers(); }
+            catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+        async function unbanUser(id) {
+            try { await ApiService.unbanUser(id); showToast('User unbanned', 'success'); loadUsers(); }
+            catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+        async function deleteUser(id) {
+            if (!confirm('Permanently delete this user? This cannot be undone.')) return;
+            try { await ApiService.deleteUser(id); showToast('User deleted', 'success'); loadUsers(); }
+            catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+
+        loadUsers();
+    </script>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><div class="icon">SS</div><span>SmartService</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item active"><i class="fas fa-chart-line"></i><span>Dashboard</span></a>
+            <a href="users.html" class="nav-item"><i class="fas fa-users"></i><span>Users</span></a>
+            <a href="providers.html" class="nav-item"><i class="fas fa-user-tie"></i><span>Providers</span></a>
+            <a href="bookings.html" class="nav-item"><i class="fas fa-calendar"></i><span>Bookings</span></a>
+            <a href="reviews.html" class="nav-item"><i class="fas fa-star"></i><span>Reviews</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">A</div>
+                <div class="user-details"><span class="name" id="userName">Admin</span></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Auth.logout()" style="width:100%; margin-top: 12px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <button type="button" class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar"><i class="fas fa-bars"></i></button>
+            <h2>Admin Dashboard</h2>
+        </div>
+
+        <div class="content-area">
+            <!-- Stats -->
+            <div class="grid-4">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(108,99,255,0.15); color: var(--primary);"><i class="fas fa-users"></i></div>
+                    <div class="stat-info"><h3 id="totalUsers">0</h3><p>Total Users</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(0,217,166,0.15); color: var(--accent);"><i class="fas fa-user-tie"></i></div>
+                    <div class="stat-info"><h3 id="totalProviders">0</h3><p>Providers</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(255,184,0,0.15); color: var(--warning);"><i class="fas fa-calendar-check"></i></div>
+                    <div class="stat-info"><h3 id="totalBookings">0</h3><p>Total Bookings</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(255,101,132,0.15); color: var(--secondary);"><i class="fas fa-concierge-bell"></i></div>
+                    <div class="stat-info"><h3 id="totalServices">0</h3><p>Total Services</p></div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px; margin-top: 24px;">
+                <div class="card">
+                    <div class="card-header"><h3><i class="fas fa-chart-bar"></i> Monthly Bookings</h3></div>
+                    <div class="card-body"><canvas id="bookingsChart" height="250"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h3><i class="fas fa-chart-pie"></i> Booking Status</h3></div>
+                    <div class="card-body"><canvas id="statusChart" height="250"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-clock"></i> Pending Providers</h3>
+                        <a href="providers.html" class="btn btn-sm btn-secondary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        <div id="pendingProviders">
+                            <p style="color: var(--text-muted); text-align: center;">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-history"></i> Recent Bookings</h3>
+                        <a href="bookings.html" class="btn btn-sm btn-secondary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead><tr><th>Service</th><th>Status</th><th>Amount</th></tr></thead>
+                                <tbody id="recentBookingsTable">
+                                    <tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Loading...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        Auth.requireAuth('ADMIN');
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.fullName || 'Admin';
+        document.getElementById('userAvatar').textContent = Auth.getInitials();
+
+        let bookingsChart, statusChart;
+
+        async function loadDashboard() {
+            try {
+                const response = await ApiService.getAdminDashboard();
+                const stats = response.data || response;
+
+                document.getElementById('totalUsers').textContent = stats.totalUsers || 0;
+                document.getElementById('totalProviders').textContent = stats.totalProviders || 0;
+                document.getElementById('totalBookings').textContent = stats.totalBookings || 0;
+                document.getElementById('totalServices').textContent = stats.totalServices || 0;
+
+                // Monthly Bookings Chart
+                const months = stats.bookingsByMonth ? Object.keys(stats.bookingsByMonth) : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                const monthData = stats.bookingsByMonth ? Object.values(stats.bookingsByMonth) : [0, 0, 0, 0, 0, 0];
+
+                if (bookingsChart) bookingsChart.destroy();
+                bookingsChart = new Chart(document.getElementById('bookingsChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Bookings',
+                            data: monthData,
+                            backgroundColor: 'rgba(108, 99, 255, 0.6)',
+                            borderColor: 'rgba(108, 99, 255, 1)',
+                            borderWidth: 1,
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#999' } },
+                            x: { grid: { display: false }, ticks: { color: '#999' } }
+                        }
+                    }
+                });
+
+                // Status Chart
+                const statusData = {
+                    PENDING: stats.pendingBookings || 0,
+                    CONFIRMED: stats.activeBookings || 0,
+                    COMPLETED: stats.completedBookings || 0,
+                    CANCELLED: stats.cancelledBookings || 0
+                };
+
+                if (statusChart) statusChart.destroy();
+                statusChart = new Chart(document.getElementById('statusChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(statusData),
+                        datasets: [{
+                            data: Object.values(statusData),
+                            backgroundColor: ['#FFB800', '#00D9A6', '#FF4757', '#6C63FF'],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#999', padding: 16 } }
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Dashboard error:', e);
+            }
+
+            // Load pending providers
+            try {
+                const provRes = await ApiService.getAdminProviders();
+                const providers = (provRes.data || []).filter(p => p.status === 'PENDING');
+                const container = document.getElementById('pendingProviders');
+
+                if (providers.length === 0) {
+                    container.innerHTML = '<p style="color: var(--text-muted); text-align: center;">No pending providers</p>';
+                } else {
+                    container.innerHTML = providers.slice(0, 5).map(p => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--bg-darker);">
+                            <div>
+                                <strong>${p.businessName || 'Provider'}</strong>
+                                <p style="color: var(--text-muted); font-size: 13px;">${p.primaryCategory || p.category || ''}</p>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-sm btn-accent" onclick="approveProvider(${p.id})"><i class="fas fa-check"></i></button>
+                                <button class="btn btn-sm btn-danger" onclick="rejectProvider(${p.id})"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error('Providers error:', e);
+            }
+
+            // Load recent bookings
+            try {
+                const bookRes = await ApiService.getAdminBookings();
+                const bookings = bookRes.data || [];
+                const tbody = document.getElementById('recentBookingsTable');
+
+                if (bookings.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">No bookings</td></tr>';
+                } else {
+                    tbody.innerHTML = bookings.slice(0, 5).map(b => `
+                        <tr>
+                            <td><strong>${(b.service && b.service.title) || 'Service'}</strong></td>
+                            <td>${getStatusBadge(b.status)}</td>
+                            <td><strong>${formatCurrency(b.totalAmount || 0)}</strong></td>
+                        </tr>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error('Bookings error:', e);
+            }
+        }
+
+        async function approveProvider(id) {
+            try { await ApiService.approveProvider(id); showToast('Provider approved!', 'success'); loadDashboard(); }
+            catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+        async function rejectProvider(id) {
+            if (!confirm('Reject this provider?')) return;
+            try { await ApiService.rejectProvider(id); showToast('Provider rejected', 'success'); loadDashboard(); }
+            catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>

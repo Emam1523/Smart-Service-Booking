@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Dashboard - SmartService</title>
+    <link rel="stylesheet" href="../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo"><div class="icon">SS</div><span>SmartService</span></div>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="dashboard.html" class="nav-item active"><i class="fas fa-home"></i><span>Dashboard</span></a>
+            <a href="services.html" class="nav-item"><i class="fas fa-concierge-bell"></i><span>My Services</span></a>
+            <a href="bookings.html" class="nav-item"><i class="fas fa-calendar"></i><span>Bookings</span></a>
+            <a href="reviews.html" class="nav-item"><i class="fas fa-star"></i><span>Reviews</span></a>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="user-info">
+                <div class="avatar" id="userAvatar">P</div>
+                <div class="user-details"><span class="name" id="userName">Provider</span><span class="role">Service Provider</span></div>
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="Auth.logout()" style="width:100%; margin-top: 12px;"><i class="fas fa-sign-out-alt"></i> Logout</button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="topbar">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle Sidebar"><i class="fas fa-bars"></i></button>
+            <h2>Provider Dashboard</h2>
+        </div>
+
+        <div class="content-area">
+            <!-- Provider Status Banner -->
+            <div id="statusBanner"></div>
+
+            <!-- Stats -->
+            <div class="grid-4" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(108,99,255,0.15); color: var(--primary);"><i class="fas fa-concierge-bell"></i></div>
+                    <div class="stat-info"><h3 id="totalServices">0</h3><p>Active Services</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(0,217,166,0.15); color: var(--accent);"><i class="fas fa-calendar-check"></i></div>
+                    <div class="stat-info"><h3 id="totalBookings">0</h3><p>Total Bookings</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(255,184,0,0.15); color: var(--warning);"><i class="fas fa-star"></i></div>
+                    <div class="stat-info"><h3 id="avgRating">0.0</h3><p>Avg. Rating</p></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: rgba(255,101,132,0.15); color: var(--secondary);"><i class="fas fa-comments"></i></div>
+                    <div class="stat-info"><h3 id="totalReviews">0</h3><p>Total Reviews</p></div>
+                </div>
+            </div>
+
+            <!-- Recent Bookings -->
+            <div class="card" style="margin-top: 24px;">
+                <div class="card-header">
+                    <h3><i class="fas fa-clock"></i> Pending Bookings</h3>
+                    <a href="bookings.html" class="btn btn-sm btn-secondary">View All</a>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Customer</th>
+                                    <th>Date</th>
+                                    <th>Problem</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pendingBookingsTable">
+                                <tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Loading...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="../assets/js/api.js"></script>
+    <script src="../assets/js/auth.js"></script>
+    <script src="../assets/js/app.js"></script>
+    <script>
+        Auth.requireAuth('PROVIDER');
+        const user = Auth.getUser();
+        document.getElementById('userName').textContent = user.fullName || 'Provider';
+        document.getElementById('userAvatar').textContent = Auth.getInitials();
+
+        async function loadDashboard() {
+            try {
+                // Load stats
+                const statsRes = await ApiService.getProviderStats();
+                const stats = statsRes.data || statsRes;
+                document.getElementById('totalServices').textContent = stats.totalServices || 0;
+                document.getElementById('totalBookings').textContent = stats.totalBookings || 0;
+                document.getElementById('avgRating').textContent = (stats.averageRating || 0).toFixed(1);
+                document.getElementById('totalReviews').textContent = stats.totalReviews || 0;
+
+                // Status banner
+                const banner = document.getElementById('statusBanner');
+                if (stats.status === 'PENDING') {
+                    banner.innerHTML = `<div class="card" style="background: rgba(255,184,0,0.1); border: 1px solid var(--warning); margin-bottom: 24px;">
+                        <div class="card-body"><i class="fas fa-hourglass-half" style="color: var(--warning);"></i> 
+                        <strong>Your account is pending approval.</strong> An admin will review your profile shortly.</div></div>`;
+                } else if (stats.status === 'REJECTED') {
+                    banner.innerHTML = `<div class="card" style="background: rgba(255,71,87,0.1); border: 1px solid var(--danger); margin-bottom: 24px;">
+                        <div class="card-body"><i class="fas fa-times-circle" style="color: var(--danger);"></i> 
+                        <strong>Your provider application was rejected.</strong> Please contact support.</div></div>`;
+                }
+            } catch (e) {
+                console.error('Stats error:', e);
+            }
+
+            try {
+                // Load pending bookings
+                const bookingsRes = await ApiService.getProviderBookings();
+                const bookings = (bookingsRes.data || []).filter(b => b.status === 'PENDING');
+                const tbody = document.getElementById('pendingBookingsTable');
+
+                if (bookings.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No pending bookings</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = bookings.slice(0, 5).map(b => `
+                    <tr>
+                        <td><strong>${(b.service && b.service.title) || 'Service'}</strong></td>
+                        <td>${(b.user && b.user.fullName) || '-'}</td>
+                        <td>${formatDate(b.bookingDate || b.createdAt)}</td>
+                        <td style="max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${b.notes || ''}">${b.notes || '-'}</td>
+                        <td>
+                            <button class="btn btn-sm btn-accent" onclick="acceptBooking(${b.id})"><i class="fas fa-check"></i></button>
+                            <button class="btn btn-sm btn-danger" onclick="rejectBooking(${b.id})"><i class="fas fa-times"></i></button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error('Bookings error:', e);
+            }
+        }
+
+        async function acceptBooking(id) {
+            try {
+                await ApiService.acceptBooking(id);
+                showToast('Booking accepted!', 'success');
+                loadDashboard();
+            } catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+
+        async function rejectBooking(id) {
+            if (!confirm('Reject this booking?')) return;
+            try {
+                await ApiService.rejectBooking(id);
+                showToast('Booking rejected', 'success');
+                loadDashboard();
+            } catch (e) { showToast(e.message || 'Failed', 'error'); }
+        }
+
+        loadDashboard();
+    </script>
+</body>
+</html>
